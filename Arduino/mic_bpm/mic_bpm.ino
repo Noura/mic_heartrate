@@ -17,7 +17,7 @@ class Filter
         float step(float x)
         {
             prev = curr;
-            curr = 0.99 * prev + 0.01 * x;
+            curr = 0.95 * prev + 0.05 * x;
             return curr;
         }
 };
@@ -28,15 +28,15 @@ class BufferAverage {
   public:
     BufferAverage(int N);
     ~BufferAverage();
-    void updateB(int val);
-    int averageB();
+    void updateB(float val);
+    float averageB();
     void printB();
 
   private:
     int _NSAMPLES = 0;
-    int* _buf = 0;
+    float* _buf = 0;
     int _bufIndex = 0;
-    int _bufVal = 0;
+    float _bufVal = 0;
     Filter myFilter;
 };
 
@@ -46,10 +46,10 @@ BufferAverage::BufferAverage(int N) {
   if (_buf != 0) {
     delete [] _buf;
   }
-  _buf = new int[_NSAMPLES*2];
+  _buf = new float[_NSAMPLES*2];
 
   for (int i = 0; i < _NSAMPLES*2; i++) {
-    _buf[i] = 0;
+    _buf[i] = 0.0;
   }
 }
 
@@ -59,7 +59,7 @@ BufferAverage::~BufferAverage() {
   }
 }
 
-void BufferAverage::updateB(int val) {
+void BufferAverage::updateB(float val) {
   _buf[_bufIndex] = val;
   _buf[_bufIndex + _NSAMPLES] = val;
   _bufIndex += 1;
@@ -68,12 +68,12 @@ void BufferAverage::updateB(int val) {
   }
 }
 
-int BufferAverage::averageB() {
+float BufferAverage::averageB() {
   float avg = 0;
   for (int i = _bufIndex + _NSAMPLES; i--; i > _bufIndex) {
-    avg += float(_buf[i]) / float(_NSAMPLES);
+    avg += _buf[i] / float(_NSAMPLES);
   }
-  return int(avg);
+  return avg;
 }
 
 void BufferAverage::printB() {
@@ -87,7 +87,10 @@ void BufferAverage::printB() {
 
 Filter myFilter;
 int micVal = 0;
-int micValFiltered = 0;
+float micValFiltered = 0;
+float micValFilteredPrev = 0;
+
+BufferAverage micVals(15);
 
 void setup() {
   pinMode(micPin, INPUT);
@@ -95,9 +98,11 @@ void setup() {
 }
 
 void loop() {
-
+  micValFilteredPrev = micValFiltered;
+  
   micVal = abs(analogRead(micPin)-512);
-  micValFiltered = int(myFilter.step(micVal));
+  micValFiltered = myFilter.step(micVal);
+
   Serial.println(micValFiltered);
 }
 
