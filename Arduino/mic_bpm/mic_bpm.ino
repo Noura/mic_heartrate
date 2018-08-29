@@ -83,37 +83,6 @@ void BufferAverage::printB() {
   }
 }
 
-/*
-// TODO average delta buffer class
-
-// MIC INPUT BUFFER GLOBAL VARIABLES
-// yes it's bad but... we're in a hurry
-#define bufferN 30
-
-int micBuffer[bufferN*2]; // duplicate buffer for averaging convenience
-int micIndex = 0;   // current index we are updating in the micVals buffer
-int micVal = 0;     // latest mic reading
-int micValPrev = 0; // previous mic reading
-int micDelta = 0;   // delta
-int micDeltaAvg = 0; // average delta over previous buffer's worth of deltas
-
-
-// BPM GLOBAL VARIABLES
-// bb is short for babump
-#define bbBufferN 30
-
-int bbTimes[bbBufferN*2]; // time deltas (ms) of the "ba" and "bump" of the babump
-int bbIndex = 0; // current index we are updating in the bbTimes buffer
-int bbTime = 0;  // latest timestamp (ms)
-int bbTimePrev = 0; // previous timestamp (ms)
-int bbDelta = 0; // delta
-int bbDeltaAvg = 0; // average delta over previous buffer's worth of deltas
-
-
-// TRACKING UPS AND DOWNS
-bool avgUP = false;
-*/
-
 BufferAverage micBuf(50);
 int micVal = 0;
 
