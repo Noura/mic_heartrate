@@ -1,0 +1,3 @@
+[submodule "RaspberryPi/heartrate_analysis_python"]
+	path = RaspberryPi/heartrate_analysis_python
+	url = https://github.com/paulvangentcom/heartrate_analysis_python
