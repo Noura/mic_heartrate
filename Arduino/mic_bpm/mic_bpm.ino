@@ -7,17 +7,18 @@ class Filter
     public:
         Filter()
         {
-            v[0]=0.0;
+            curr = 0.0;
+            prev = 0.0;
         }
     private:
-        float v[2];
+        float curr;
+        float prev;
     public:
-        float step(float x) //class II 
+        float step(float x)
         {
-            v[0] = v[1];
-            v[1] = (5.919070381841e-2 * x)
-                + (  0.8816185924 * v[0]);
-            return (v[0] + v[1]);
+            prev = curr;
+            curr = 0.99 * prev + 0.01 * x;
+            return curr;
         }
 };
 
@@ -83,8 +84,10 @@ void BufferAverage::printB() {
   }
 }
 
-BufferAverage micBuf(50);
+
+Filter myFilter;
 int micVal = 0;
+int micValFiltered = 0;
 
 void setup() {
   pinMode(micPin, INPUT);
@@ -94,8 +97,7 @@ void setup() {
 void loop() {
 
   micVal = abs(analogRead(micPin)-512);
-  micBuf.updateB(micVal);
-  Serial.println(micBuf.averageB());
-
+  micValFiltered = int(myFilter.step(micVal));
+  Serial.println(micValFiltered);
 }
 
