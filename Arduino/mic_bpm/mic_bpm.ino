@@ -1,5 +1,89 @@
 #define micPin 0
 
+// LOW PASS FILTER
+
+class Filter
+{
+    public:
+        Filter()
+        {
+            v[0]=0.0;
+        }
+    private:
+        float v[2];
+    public:
+        float step(float x) //class II 
+        {
+            v[0] = v[1];
+            v[1] = (5.919070381841e-2 * x)
+                + (  0.8816185924 * v[0]);
+            return (v[0] + v[1]);
+        }
+};
+
+// BUFFER THAT UPDATES ITSELF AND WILL GIVE YOU A ROLLING AVERAGE
+
+class BufferAverage {
+  public:
+    BufferAverage(int N);
+    ~BufferAverage();
+    void updateB(int val);
+    int averageB();
+    void printB();
+
+  private:
+    int _NSAMPLES = 0;
+    int* _buf = 0;
+    int _bufIndex = 0;
+    int _bufVal = 0;
+    Filter myFilter;
+};
+
+BufferAverage::BufferAverage(int N) {
+  _NSAMPLES = N;
+  
+  if (_buf != 0) {
+    delete [] _buf;
+  }
+  _buf = new int[_NSAMPLES*2];
+
+  for (int i = 0; i < _NSAMPLES*2; i++) {
+    _buf[i] = 0;
+  }
+}
+
+BufferAverage::~BufferAverage() {
+  if (_buf != 0) {
+    delete [] _buf;
+  }
+}
+
+void BufferAverage::updateB(int val) {
+  _buf[_bufIndex] = val;
+  _buf[_bufIndex + _NSAMPLES] = val;
+  _bufIndex += 1;
+  if (_bufIndex > _NSAMPLES-1) {
+    _bufIndex = 0;
+  }
+}
+
+int BufferAverage::averageB() {
+  float avg = 0;
+  for (int i = _bufIndex + _NSAMPLES; i--; i > _bufIndex) {
+    avg += float(_buf[i]) / float(_NSAMPLES);
+  }
+  return int(avg);
+}
+
+void BufferAverage::printB() {
+  Serial.println("\n\n BufferAverage::printB()");
+  for (int i = 0; i < _NSAMPLES*2; i++) {
+    if (i == _NSAMPLES) Serial.println();
+    Serial.print(_buf[i]); Serial.print(", ");
+  }
+}
+
+/*
 // TODO average delta buffer class
 
 // MIC INPUT BUFFER GLOBAL VARIABLES
@@ -28,98 +112,21 @@ int bbDeltaAvg = 0; // average delta over previous buffer's worth of deltas
 
 // TRACKING UPS AND DOWNS
 bool avgUP = false;
+*/
+
+BufferAverage micBuf(50);
+int micVal = 0;
 
 void setup() {
   pinMode(micPin, INPUT);
   Serial.begin(9600);
-
-  for (int i = 0; i < bufferN*2; i++) {
-    micBuffer[i] = 0;
-  }
-
-  for (int i = 0; i < bbBufferN*2; i++) {
-    bbTimes[i] = 0;
-  }
 }
 
 void loop() {
-  micValPrev = micVal;
+
   micVal = abs(analogRead(micPin)-512);
-  micDelta = micVal - micValPrev;
-  updateBuffer(micDelta);
-  micDeltaAvg = avgBuffer();
-  //Serial.println(micDeltaAvg);
-  Serial.println(micVal);
+  micBuf.updateB(micVal);
+  Serial.println(micBuf.averageB());
 
-  if (micDeltaAvg < 0 && avgUP) {
-    // things were going up previously, but now they are going down
-    // so we think we are at the crest of the peak of ba or bump in babump
-    avgUP = false;
-    bbTimePrev = bbTime;
-    bbTime = millis();
-    bbDelta = bbTime - bbTimePrev;
-    updateBBTimesBuffer(bbDelta);
-    bbDeltaAvg = avgBBTimesBuffer();
-    //Serial.println("*******************************************************");
-    //Serial.print("bbDeltaAvg: ");Serial.println(bbDeltaAvg);  
-  }
-  avgUP = micDeltaAvg > 0 ? true : false;
 }
 
-// MIC INPUT BUFFER HELPER FUNCTIONS
-// Tracking averaged deltas in absolute value of mic signal to find the "babump"
-// The "babump" is marked by the amplitude of the mic signal going upward on avg
-
-// mainting a duplicate buffer so it is easier to take a trailing average
-void updateBuffer(int val) {
-  micBuffer[micIndex] = val;
-  micBuffer[micIndex + bufferN] = val;
-  micIndex += 1;
-  if (micIndex > bufferN-1) {
-    micIndex = 0;
-  }
-}
-
-// see how convenient it is to take the trailing average this way
-int avgBuffer() {
-  int sum = 0;
-  for (int i = micIndex + bufferN; i--; i > micIndex) {
-    sum += micBuffer[i];
-  }
-  return float(sum) / float(bufferN);
-}
-
-void printBuffer() {
-  Serial.println("\n\n");
-  for (int i = 0; i < bufferN*2; i++) {
-    if (i == bufferN) Serial.println();
-    Serial.print(micBuffer[i]); Serial.print(", ");
-  }
-}
-
-// BABUMP BUFFER HELPER FUNCTIONS
-
-void updateBBTimesBuffer(int val) {
-  bbTimes[bbIndex] = val;
-  bbTimes[bbIndex + bbBufferN] = val;
-  bbIndex += 1;
-  if (bbIndex > bbBufferN-1) {
-    bbIndex = 0;
-  }
-}
-
-int avgBBTimesBuffer() {
-  float avg = 0;
-  for (int i = bbIndex + bbBufferN; i--; i > bbIndex) {
-    avg += float(bbTimes[i]) / float(bbBufferN);
-  }
-  return avg;
-}
-
-void printBBTimesBuffer() {
-  Serial.println("\n\n");
-  for (int i = 0; i < bbBufferN*2; i++) {
-    if (i == bbBufferN) Serial.println();
-    Serial.print(bbTimes[i]); Serial.print(", ");
-  }
-}
