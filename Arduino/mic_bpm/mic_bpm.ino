@@ -1,3 +1,5 @@
+#include "arduinoFFT.h"
+
 #define micPin 0
 
 // LOW PASS FILTER
@@ -89,8 +91,6 @@ Filter myFilter;
 int micVal = 0;
 float micValFiltered = 0;
 float micValFilteredPrev = 0;
-
-BufferAverage micVals(15);
 
 void setup() {
   pinMode(micPin, INPUT);
